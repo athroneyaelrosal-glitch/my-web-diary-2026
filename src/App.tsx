@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+import { Typography } from '@mui/material'
 
 type EntryType = {
   id: number,
@@ -48,7 +49,7 @@ function App() {
           <img src={reactLogo} className="logo react" alt="React logo" />
         </a>
       </div>
-      <h1>Vite + React</h1>
+      <Typography variant='h1'>Vite + React</Typography>
       <div className="card">
         <button onClick={() => setCount((count) => count + 1)}>
           count is {count}
