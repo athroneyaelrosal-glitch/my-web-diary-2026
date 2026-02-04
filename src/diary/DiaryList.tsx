@@ -1,23 +1,38 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
-import SentimentSatisfiedAltIcon from "@mui/icons-material/SentimentSatisfiedAlt";
-import { blue, red } from "@mui/material/colors";
+import { blue } from "@mui/material/colors";
+import { moodList, sampleDiary, type DiaryEntryType } from "./Diary";
 
 function DiaryList() {
+  const diaryList = sampleDiary;
+
+  return (
+    <>
+      {diaryList.map((entry, index) => (
+        <DiaryEntry entry={entry} key={index} />
+      ))}
+    </>
+  );
+}
+
+function DiaryEntry({ entry }: { entry: DiaryEntryType }) {
+
   return (
     <Paper
       elevation={1}
       sx={{
         display: "flex",
         p: 1,
-        backgroundColor: blue[50],
+        backgroundColor: blue[100],
       }}
     >
-      <SentimentSatisfiedAltIcon sx={{ fontSize: "48px",
-        color: red[300]
-       }} />
+      {/* Mood Icon */}
+      <Typography sx={{ fontSize: "48px" }}>
+        {moodList[entry.mood].icon}
+      </Typography>
 
+      {/* Entry Info */}
       <Box
         sx={{
           display: "flex",
@@ -26,11 +41,11 @@ function DiaryList() {
         }}
       >
         <Typography sx={{ textAlign: "left" }}>
-          Jan 28, 2026
+          {entry.date.toUTCString()}
         </Typography>
 
         <Typography>
-          Hello, my Diary, whatever!
+          {entry.title}
         </Typography>
       </Box>
     </Paper>
