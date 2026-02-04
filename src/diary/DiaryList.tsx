@@ -3,9 +3,10 @@ import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import { blue } from "@mui/material/colors";
 import { moodList, sampleDiary, type DiaryEntryType } from "./Diary";
+import { useState } from "react";
 
 function DiaryList() {
-  const diaryList = sampleDiary;
+  const diaryList = sampleDiary
 
   return (
     <>
@@ -13,10 +14,12 @@ function DiaryList() {
         <DiaryEntry entry={entry} key={index} />
       ))}
     </>
-  );
+  )
 }
 
-function DiaryEntry({ entry }: { entry: DiaryEntryType }) {
+function DiaryEntry(prop: { entry: DiaryEntryType }) {
+  const { entry } = prop
+  const [expand, setExpand] = useState(false)
 
   return (
     <Paper
@@ -27,12 +30,10 @@ function DiaryEntry({ entry }: { entry: DiaryEntryType }) {
         backgroundColor: blue[100],
       }}
     >
-      {/* Mood Icon */}
       <Typography sx={{ fontSize: "48px" }}>
         {moodList[entry.mood].icon}
       </Typography>
 
-      {/* Entry Info */}
       <Box
         sx={{
           display: "flex",
@@ -44,12 +45,18 @@ function DiaryEntry({ entry }: { entry: DiaryEntryType }) {
           {entry.date.toUTCString()}
         </Typography>
 
-        <Typography>
+        <Typography onClick={() => setExpand(!expand)}>
           {entry.title}
         </Typography>
+
+        {expand && (
+          <Typography>
+            {entry.content}
+          </Typography>
+        )}
       </Box>
     </Paper>
-  );
+  )
 }
 
-export default DiaryList;
+export default DiaryList
