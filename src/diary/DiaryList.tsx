@@ -12,17 +12,17 @@ function DiaryList() {
     return (
         <>
             {diaryList.map((entry, index) => (
-                <DiaryEntry entry={entry} key={index} />
+                <DiaryEntry entry={entry} key={index} show={false} />
             ))}
         </>
     )
 }
 
-function DiaryEntry(prop: { entry: DiaryEntryType }) {
+export function DiaryEntry(prop: { entry: DiaryEntryType, show: boolean }) {
 
-    const { entry } = prop
+    const { entry, show } = prop
 
-    const [expand, setExpand] = useState(false)
+    const [expand, setExpand] = useState(show)
 
     return (
         <Paper elevation={1} sx={{
