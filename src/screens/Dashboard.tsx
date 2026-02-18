@@ -10,7 +10,7 @@ function Dashboard() {
             Ito yung dashboard, dito makikita yung mga summary ng diary entries mo.
         </Typography>
             Number of entries: {sampleDiary.length}
-            <DiaryEntry entry={sampleDiary[0]} show={true} />
+            <DiaryEntry entry={sampleDiary[0]} id={0} show={true} />
 
             <Typography>Latest entry: {sampleDiary[0].title}</Typography>
         </>

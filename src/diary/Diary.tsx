@@ -103,4 +103,3 @@ export const sampleDiary: DiaryEntryType[] = [
     star: 1
   }
 ]
-import { Box, Paper, Typography } from "@mui/material"

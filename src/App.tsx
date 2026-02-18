@@ -16,7 +16,7 @@ import EditCalendarIcon from '@mui/icons-material/EditCalendar';
 
 import { Route, Routes, useNavigate } from 'react-router';
 import About from './screens/About';
-import DiaryItems from './screens/Diaryitems';
+import DiaryItems from './screens/DiaryItems';
 import Dashboard from './screens/Dashboard';
 import DiaryAddEdit from './screens/DiaryAddEdit';
 
@@ -186,7 +186,7 @@ function App() {
         <Route path='/' element={<Dashboard />} />
         <Route path='about' element={<About />} />
         <Route path='diarylist' element={<DiaryItems />} />
-        <Route path='diaryaddedit' element={<DiaryAddEdit />} />
+        <Route path='diaryaddedit/:id?' element={<DiaryAddEdit />} />
       </Routes>
     </>
   );
