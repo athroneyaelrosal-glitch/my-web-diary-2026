@@ -9,6 +9,7 @@ import { moodList, sampleDiary, type DiaryEntryType } from "./Diary"
 import { useState } from "react"
 import { useNavigate } from "react-router"
 import type { MouseEvent } from "react"
+import { useTheme } from "@mui/material/styles"
 
 function DiaryList() {
 
@@ -35,11 +36,14 @@ export function DiaryEntry(prop: { entry: DiaryEntryType, id:number, show?: bool
         navigate(`/diaryaddedit/${id}`)
     }
 
+    const theme = useTheme()
+
     return (
         <Paper elevation={1} sx={{
             display: 'flex',
             p: 1,
-            backgroundColor: blue[100],
+            m: 1,
+            backgroundColor: blue[theme.palette.mode === 'dark' ? 800 : 100],
         }}>
 
             <Typography sx={{ fontSize: '48px' }}>

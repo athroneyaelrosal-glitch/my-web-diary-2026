@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router";
 import { moodList, sampleDiary } from "../diary/Diary";
 import { useState } from "react";
 import { format } from "date-fns/format";
-import { parse } from "date-fns";
 
 function DiaryAddEdit() {
 

@@ -19,6 +19,12 @@ import About from './screens/About';
 import DiaryItems from './screens/DiaryItems';
 import Dashboard from './screens/Dashboard';
 import DiaryAddEdit from './screens/DiaryAddEdit';
+import Register from './screens/Register';
+import Switch from '@mui/material/Switch';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import { ThemeProvider } from '@emotion/react';
+import { darkTheme, theme } from './Theme';
+import CssBaseline from '@mui/material/CssBaseline';
 
 type PageRoute = {
   page: string,
@@ -29,14 +35,18 @@ const pages: PageRoute[] = [
   { page: 'Dashboard', route: '/' },
   { page: 'About', route: '/about' },
   { page: 'Diary', route: '/diarylist' },
-  { page: 'New', route: '/diaryAddedit' },
-
+  { page: 'New', route: '/diaryedit' },
 ]
-const settings = ['Profile', 'Account', 'Dashboard', 'Logout'];
+const settings: PageRoute[] = [
+  { page: 'Register', route: '/register' },
+  { page: 'Login', route: '/login' },
+]
 
 function App() {
 
   const navigate = useNavigate()
+
+  const [dark, setDark] = React.useState(false)
 
   const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
@@ -58,12 +68,14 @@ function App() {
     setAnchorElNav(null);
   };
 
-  const handleCloseUserMenu = () => {
+  const handleCloseUserMenu = (page: string) => {
+    navigate(page)
     setAnchorElUser(null);
   };
 
   return (
-    <>
+    <ThemeProvider theme={dark ? darkTheme : theme}>
+      <CssBaseline />
       <AppBar position="static">
         <Container maxWidth="xl">
           <Toolbar disableGutters>
@@ -173,10 +185,21 @@ function App() {
                 onClose={handleCloseUserMenu}
               >
                 {settings.map((setting) => (
-                  <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                    <Typography sx={{ textAlign: 'center' }}>{setting}</Typography>
+                  <MenuItem key={setting.page} onClick={() => handleCloseUserMenu(setting.route)}>
+                    <Typography sx={{ textAlign: 'center' }}>{setting.page}</Typography>
                   </MenuItem>
                 ))}
+                <FormControlLabel
+                  control={
+                    <Switch checked={dark} onChange={() => {
+                      setDark(!dark)
+                      setAnchorElUser(null)
+                    }} />
+                  }
+                  sx={{ ml: 1 }}
+                  label="Dark mode"
+                  labelPlacement='end'
+                />
               </Menu>
             </Box>
           </Toolbar>
@@ -186,9 +209,10 @@ function App() {
         <Route path='/' element={<Dashboard />} />
         <Route path='about' element={<About />} />
         <Route path='diarylist' element={<DiaryItems />} />
-        <Route path='diaryaddedit/:id?' element={<DiaryAddEdit />} />
+        <Route path='diaryedit/:id?' element={<DiaryAddEdit />} />
+        <Route path='register' element={<Register />} />
       </Routes>
-    </>
+    </ThemeProvider>
   );
 }
 export default App;
