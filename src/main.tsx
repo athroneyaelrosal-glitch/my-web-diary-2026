@@ -1,15 +1,21 @@
-import { BrowserRouter } from 'react-router'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
+import { BrowserRouter } from "react-router";
+import { createRoot } from "react-dom/client";
+import { ThemeProvider, CssBaseline } from "@mui/material";
+import "./index.css";
+import App from "./App.tsx";
 
-import '@fontsource/roboto/300.css'
-import '@fontsource/roboto/400.css'
-import '@fontsource/roboto/500.css'
-import '@fontsource/roboto/700.css'
+import { theme } from "./Theme"; // adjust path if needed
 
-createRoot(document.getElementById('root')!).render(
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>,
-)
+import "@fontsource/roboto/300.css";
+import "@fontsource/roboto/400.css";
+import "@fontsource/roboto/500.css";
+import "@fontsource/roboto/700.css";
+
+createRoot(document.getElementById("root")!).render(
+  <ThemeProvider theme={theme}>
+    <CssBaseline />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </ThemeProvider>
+);

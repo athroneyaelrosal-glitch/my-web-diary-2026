@@ -22,9 +22,10 @@ import DiaryAddEdit from './screens/DiaryAddEdit';
 import Register from './screens/Register';
 import Switch from '@mui/material/Switch';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import { ThemeProvider } from '@emotion/react';
+import { ThemeProvider } from '@mui/material/styles';
 import { darkTheme, theme } from './Theme';
 import CssBaseline from '@mui/material/CssBaseline';
+import Login from './screens/Login';
 
 type PageRoute = {
   page: string,
@@ -211,6 +212,7 @@ function App() {
         <Route path='diarylist' element={<DiaryItems />} />
         <Route path='diaryedit/:id?' element={<DiaryAddEdit />} />
         <Route path='register' element={<Register />} />
+        <Route path='login' element={<Login />} />
       </Routes>
     </ThemeProvider>
   );

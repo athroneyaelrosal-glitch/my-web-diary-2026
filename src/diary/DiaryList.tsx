@@ -43,7 +43,7 @@ export function DiaryEntry(prop: { entry: DiaryEntryType, id:number, show?: bool
             display: 'flex',
             p: 1,
             m: 1,
-            backgroundColor: blue[theme.palette.mode === 'dark' ? 800 : 100],
+            backgroundColor: (theme.palette as any).tertiary.main,
         }}>
 
             <Typography sx={{ fontSize: '48px' }}>
