@@ -1,31 +1,35 @@
 import * as React from 'react';
+import { useEffect } from 'react';
+
+import AdbIcon from '@mui/icons-material/Adb';
+import Avatar from '@mui/material/Avatar';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
+import Button from '@mui/material/Button';
+import Container from '@mui/material/Container';
+import CssBaseline from '@mui/material/CssBaseline';
+import EditCalendarIcon from '@mui/icons-material/EditCalendar';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
 import Menu from '@mui/material/Menu';
 import MenuIcon from '@mui/icons-material/Menu';
-import Container from '@mui/material/Container';
-import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
-import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
-import AdbIcon from '@mui/icons-material/Adb';
-import EditCalendarIcon from '@mui/icons-material/EditCalendar';
+import Switch from '@mui/material/Switch';
+import { ThemeProvider } from '@emotion/react';
+import Toolbar from '@mui/material/Toolbar';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
 
-import { Route, Routes, useNavigate } from 'react-router';
+import { supabase } from './supabaseClient';
+import type { Session } from '@supabase/supabase-js';
+
 import About from './screens/About';
-import DiaryItems from './screens/DiaryItems';
+import { darkTheme, theme } from './Theme';
 import Dashboard from './screens/Dashboard';
 import DiaryAddEdit from './screens/DiaryAddEdit';
+import DiaryItems from './screens/DiaryItems';
 import Register from './screens/Register';
-import Switch from '@mui/material/Switch';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import { ThemeProvider } from '@mui/material/styles';
-import { darkTheme, theme } from './Theme';
-import CssBaseline from '@mui/material/CssBaseline';
-import Login from './screens/Login';
+import { Route, Routes, useNavigate } from 'react-router';
 
 type PageRoute = {
   page: string,
@@ -43,6 +47,24 @@ const settings: PageRoute[] = [
   { page: 'Login', route: '/login' },
 ]
 
+export interface UserType {
+  session: Session | null,
+  email: string | null
+}
+
+export const user: UserType = {
+  session: null,
+  email: null,
+}
+  
+function testProfiles() {
+  supabase.from('profiles').select().then(({ data, error }) => {
+    console.log(data)
+    console.log(error)
+  })
+}
+
+
 function App() {
 
   const navigate = useNavigate()
@@ -51,6 +73,10 @@ function App() {
 
   const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
+
+  useEffect(() => {
+    initUser()
+  }, [])
 
   const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
@@ -73,6 +99,23 @@ function App() {
     navigate(page)
     setAnchorElUser(null);
   };
+
+  const initUser = () => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log(session)
+      user.session = session
+      user.email = session?.user?.email ?? null
+    }).catch(error => {
+      console.log(error)
+    })
+    supabase.auth.onAuthStateChange((_event, session) => {
+      console.log(_event)
+      console.log(session)
+      user.session = session
+      user.email = session?.user?.email ?? null
+    })
+    testProfiles ()
+  }
 
   return (
     <ThemeProvider theme={dark ? darkTheme : theme}>
@@ -212,7 +255,6 @@ function App() {
         <Route path='diarylist' element={<DiaryItems />} />
         <Route path='diaryedit/:id?' element={<DiaryAddEdit />} />
         <Route path='register' element={<Register />} />
-        <Route path='login' element={<Login />} />
       </Routes>
     </ThemeProvider>
   );
