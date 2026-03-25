@@ -6,34 +6,58 @@ import EditIcon from '@mui/icons-material/Edit'
 import Tooltip from '@mui/material/Tooltip'
 import { blue } from "@mui/material/colors"
 import { moodList, sampleDiary, type DiaryEntryType } from "./Diary"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router"
-import type { MouseEvent } from "react"
 import { useTheme } from "@mui/material/styles"
+import { supabase } from "../supabaseClient"
+import { user } from "../App"
 
 function DiaryList() {
 
-    const diaryList = sampleDiary
+    const [diaryList, setDiaryList] = useState<DiaryEntryType[]>([])
+
+    useEffect(() => {
+        // TODO sort later
+        supabase.from('entries').select().then(({ data, error }) => {
+            console.log(data)
+            console.log(error)
+            if (!error) {
+                const entries = data.map(item => {
+                    const entry = {
+                        date: item.created_at ? new Date(item.created_at) : new Date(),
+                        title: item.title ?? '',
+                        mood: item.mood ?? 1,
+                        content: item.content ?? '',
+                        star: item.star ?? 1,
+                    }
+                    return entry
+                })
+                setDiaryList(entries)
+            } else {
+                setDiaryList(sampleDiary)
+            }
+        })
+    }, [user.email])
 
     return (
         <>
             {diaryList.map((entry, index) => (
-                <DiaryEntry entry={entry} id={index} key={index} show={false} />
+                <DiaryEntry entry={entry} id={index} key={index} />
             ))}
         </>
     )
 }
 
-export function DiaryEntry(prop: { entry: DiaryEntryType, id:number, show?: boolean }) {
+export function DiaryEntry(prop: { entry: DiaryEntryType, id: number, show?: boolean }) {
 
     const { entry, id, show } = prop
-    
+
     const navigate = useNavigate()
 
     const [expand, setExpand] = useState(show)
 
-    function handleEdit(event: MouseEvent<HTMLButtonElement>): void {
-        navigate(`/diaryaddedit/${id}`)
+    function handleEdit(): void {
+        navigate(`/diaryedit/${id}`)
     }
 
     const theme = useTheme()
@@ -43,7 +67,7 @@ export function DiaryEntry(prop: { entry: DiaryEntryType, id:number, show?: bool
             display: 'flex',
             p: 1,
             m: 1,
-            backgroundColor: (theme.palette as any).tertiary.main,
+            backgroundColor: blue[theme.palette.mode === 'dark' ? 800 : 100],
         }}>
 
             <Typography sx={{ fontSize: '48px' }}>
@@ -71,10 +95,10 @@ export function DiaryEntry(prop: { entry: DiaryEntryType, id:number, show?: bool
                 {"★".repeat(entry.star)}
             </Typography>
             <Tooltip title="Edit">
-      <IconButton aria-label="edit" onClick={handleEdit}>
-        <EditIcon />
-      </IconButton>
-    </Tooltip>
+                <IconButton aria-label="edit" onClick={handleEdit}>
+                    <EditIcon />
+                </IconButton>
+            </Tooltip>
         </Paper>
     )
 }

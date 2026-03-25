@@ -1,143 +1,137 @@
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  InputAdornment,
-  IconButton
-} from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { Box, Button, TextField, Typography } from "@mui/material"
 import { useNavigate } from "react-router";
 import { useState } from "react";
+import { supabase } from "../supabaseClient";
+import { user } from "../App";
 
 function Register() {
 
-  const navigate = useNavigate();
+    const navigate = useNavigate()
+    const emptyEntry = {
+        name: '',
+        email: '',
+        password: '',
+        retypePassword: '',
+    }
+    const [entry, setEntry] = useState(emptyEntry)
+    const [error, setError] = useState(emptyEntry)
+    const [otherError, setOtherError] = useState('')
 
-  const emptyEntry = {
-    name: "",
-    email: "",
-    password: "",
-    retypePassword: "",
-    course: "",
-    year: "",
-  };
-
-  const [entry, setEntry] = useState(emptyEntry);
-  const [error, setError] = useState<any>({});
-  const [showPassword, setShowPassword] = useState(false);
-
-  function save() {
-
-    let newError: any = {};
-
-    if (!entry.email) newError.email = "Email is required";
-    if (!entry.password) newError.password = "Password is required";
-    if (!entry.course) newError.course = "Course is required";
-    if (!entry.year) newError.year = "Year is required";
-
-    if (entry.password !== entry.retypePassword) {
-      newError.password = "Passwords did not match";
-      newError.retypePassword = "Passwords did not match";
+    function save() {
+        // validate
+        setError(emptyEntry)
+        if (entry.password !== entry.retypePassword) {
+            setError({
+                ...error, password: 'Paswords did not match', retypePassword: 'Paswords did not match'
+            })
+            return
+        }
+        // register to Supabase
+        supabase.auth.signUp({
+            email: entry.email,
+            password: entry.password.trim(),
+            options: {
+                data: {
+                    full_name: entry.name,
+                },
+            },
+        }).then(({ data, error }) => {
+            //Log.d(data)
+            if (error) {
+                console.log(error.message)
+                setOtherError(error.message)
+            } else {
+                console.log(data)
+                user.session = data.session
+                user.email = data.user?.email ?? null
+                navigate('/')
+            }
+        }).catch((error) => {
+            console.log(error)
+            setOtherError(error.error_description || error.message)
+        }).finally(() => {
+            //setLoading(false)
+        })
     }
 
-    setError(newError);
-
-    if (Object.keys(newError).length > 0) return;
-
-    navigate("/login");
-  }
-
-  return (
-    <Box sx={{ p: 2 }}>
-      <Typography variant="h4" sx={{ pb: 2 }}>Register</Typography>
-
-      <TextField
-        fullWidth
-        label="Name"
-        value={entry.name}
-        onChange={e => setEntry({ ...entry, name: e.target.value })}
-        sx={{ mb: 2 }}
-      />
-
-      <TextField
-        fullWidth
-        label="Email"
-        error={!!error.email}
-        helperText={error.email}
-        value={entry.email}
-        onChange={e => setEntry({ ...entry, email: e.target.value })}
-        sx={{ mb: 2 }}
-      />
-
-      <TextField
-        fullWidth
-        label="Course"
-        error={!!error.course}
-        helperText={error.course}
-        value={entry.course}
-        onChange={e => setEntry({ ...entry, course: e.target.value })}
-        sx={{ mb: 2 }}
-      />
-
-      <FormControl fullWidth sx={{ mb: 2 }} error={!!error.year}>
-        <InputLabel>Year</InputLabel>
-        <Select
-          value={entry.year}
-          label="Year"
-          onChange={(e) => setEntry({ ...entry, year: e.target.value })}
-        >
-          {[1,2,3,4].map(y => (
-            <MenuItem key={y} value={y}>{y}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
-      <TextField
-        fullWidth
-        label="Password"
-        type={showPassword ? "text" : "password"}
-        error={!!error.password}
-        helperText={error.password}
-        value={entry.password}
-        onChange={e => setEntry({ ...entry, password: e.target.value })}
-        sx={{ mb: 2 }}
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton onClick={() => setShowPassword(!showPassword)}>
-                {showPassword ? <VisibilityOff /> : <Visibility />}
-              </IconButton>
-            </InputAdornment>
-          )
-        }}
-      />
-
-      <TextField
-        fullWidth
-        label="Retype Password"
-        type={showPassword ? "text" : "password"}
-        error={!!error.retypePassword}
-        helperText={error.retypePassword}
-        value={entry.retypePassword}
-        onChange={e => setEntry({ ...entry, retypePassword: e.target.value })}
-        sx={{ mb: 3 }}
-      />
-
-      <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
-        <Button variant="outlined" onClick={() => navigate("/")}>
-          Cancel
-        </Button>
-        <Button variant="contained" onClick={save}>
-          Register
-        </Button>
-      </Box>
-    </Box>
-  );
+    return (
+        <Box sx={{ padding: 1 }}>
+            <Typography variant="h4" component="h4" sx={{ pb: 2, pt: 1 }}>Register</Typography>
+            <TextField
+                fullWidth
+                id="name"
+                label="Name"
+                variant="outlined"
+                value={entry.name}
+                onChange={event => {
+                    setEntry({
+                        ...entry, name: event.target.value
+                    })
+                }}
+                sx={{
+                    "& .MuiInputBase-root": {
+                        height: '65px'
+                    },
+                    mr: 0.5,
+                    mb: 1.5
+                }}
+            />
+            <TextField
+                fullWidth
+                id="email"
+                label="Email"
+                variant="outlined"
+                value={entry.email}
+                onChange={event => {
+                    setEntry({
+                        ...entry, email: event.target.value
+                    })
+                }}
+                sx={{
+                    "& .MuiInputBase-root": {
+                        height: '65px'
+                    },
+                    mr: 0.5,
+                    mb: 1.5
+                }}
+            />
+            <TextField
+                fullWidth
+                id="password"
+                label="Password"
+                type="password"
+                error={error.password.length > 0}
+                helperText={error.password}
+                variant="outlined"
+                value={entry.password}
+                onChange={event => setEntry({
+                    ...entry, password: event.target.value
+                })}
+                sx={{
+                    mb: 1.5
+                }}
+            />
+            <TextField
+                fullWidth
+                id="retypePassword"
+                label="Retype Password"
+                type="password"
+                error={error.retypePassword.length > 0}
+                helperText={error.retypePassword}
+                variant="outlined"
+                value={entry.retypePassword}
+                onChange={event => setEntry({
+                    ...entry, retypePassword: event.target.value
+                })}
+                sx={{
+                    mb: 1.5
+                }}
+            />
+            <Typography color='error'>{otherError}</Typography>
+            <Button variant="outlined" onClick={() => navigate('/')}>Cancel</Button>
+            <Button variant="contained" onClick={() => save()} sx={{ ml: 1 }}>Register</Button>
+        </Box>
+    )
 }
 
-export default Register;
+export default Register
