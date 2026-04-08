@@ -24,6 +24,7 @@ function DiaryList() {
             if (!error) {
                 const entries = data.map(item => {
                     const entry = {
+                        id: item.id,
                         date: item.created_at ? new Date(item.created_at) : new Date(),
                         title: item.title ?? '',
                         mood: item.mood ?? 1,
@@ -57,7 +58,9 @@ export function DiaryEntry(prop: { entry: DiaryEntryType, id: number, show?: boo
     const [expand, setExpand] = useState(show)
 
     function handleEdit(): void {
-        navigate(`/diaryedit/${id}`)
+        navigate(`/diaryedit/${entry.id}`, {
+            state: entry
+        })
     }
 
     const theme = useTheme()
