@@ -13,7 +13,10 @@ function Dashboard() {
 
     useEffect(() => {
         // TODO sort later
-        supabase.from('entries').select('*', { count: 'exact' }).then(({ data, error, count }) => {
+        supabase.from('entries').select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .then(({ data, error, count }) => {
             console.log(data)
             console.log(error)
             if (!error) {
