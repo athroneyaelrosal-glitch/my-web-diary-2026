@@ -30,6 +30,7 @@ import DiaryAddEdit from './screens/DiaryAddEdit';
 import DiaryItems from './screens/DiaryItems';
 import Login from './screens/Login';
 import Register from './screens/Register';
+import Map from './screens/Map';
 import { Route, Routes, useNavigate } from 'react-router';
 
 type PageRoute = {
@@ -42,6 +43,7 @@ const pages: PageRoute[] = [
   { page: 'About', route: '/about' },
   { page: 'Diary', route: '/diarylist' },
   { page: 'New', route: '/diaryedit' },
+  { page: 'Map', route: '/map' },
 ]
 const settings: PageRoute[] = [
   { page: 'Register', route: '/register' },
@@ -277,6 +279,7 @@ function App() {
         <Route path='diarylist' element={<DiaryItems />} />
         <Route path='diaryedit/:id?' element={<DiaryAddEdit />} />
         <Route path='register' element={<Register />} />
+        <Route path='map/:loc?' element={<Map />} />
         <Route path='login' element={<Login />} />
       </Routes>
     </ThemeProvider>
