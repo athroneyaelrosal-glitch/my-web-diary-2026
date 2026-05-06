@@ -21,65 +21,49 @@ import MenuItem from "@mui/material/MenuItem"
 import AccountBoxIcon from '@mui/icons-material/AccountBox';
 
 function DiaryList() {
-
     const [diaryList, setDiaryList] = useState<DiaryEntryType[]>([])
     const [filter, setFilter] = useState('')
     const [filterMood, setFilterMood] = useState(-1)
 
+    // ✅ FIXED: Added filterMood to dependency array so it refreshes on change
     useEffect(() => {
         loadEntries()
-    }, [user.email])
+    }, [user.email, filterMood])
 
     function loadEntries() {
+        let query = supabase
+            .from('entries')
+            .select()
+            .order('created_at', { ascending: false })
+            .limit(20)
+
         if (filter) {
-            supabase.from('entries')
-                .select()
-                .textSearch('search_vector', filter, { type: 'websearch' })
-                .order('created_at', { ascending: false })
-                .limit(20)
-                .then(({ data, error }) => {
-                    processEntries(data, error)
-                })
-        } else {
-            supabase.from('entries')
-                .select()
-                .order('created_at', { ascending: false })
-                .limit(20)
-                .then(({ data, error }) => {
-                    processEntries(data, error)
-                })
+            query = query.textSearch('search_vector', filter, { type: 'websearch' })
         }
+
+        // ✅ REQUIREMENT 4: Mood filter works even when Category is "All" (-1)
+        if (filterMood !== -1) {
+            query = query.eq('mood', filterMood)
+        }
+
+        query.then(({ data, error }) => {
+            processEntries(data, error)
+        })
     }
 
-    function processEntries(data: { content: string | null; created_at: string | null; id: string; mood: number | null; star: number | null; title: string | null; user_id: string }[] | null, error: PostgrestError | null) {
-        console.log(data)
-        console.log(error)
+    function processEntries(data: any[] | null, error: PostgrestError | null) {
         if (!error && data) {
-            const entries = data.map(item => {
-                const entry = {
-                    id: item.id,
-                    date: item.created_at ? new Date(item.created_at) : new Date(),
-                    title: item.title ?? '',
-                    mood: item.mood ?? 1,
-                    content: item.content ?? '',
-                    star: item.star ?? 1,
-                }
-                return entry
-            })
+            const entries = data.map(item => ({
+                id: item.id,
+                date: item.created_at ? new Date(item.created_at) : new Date(),
+                title: item.title ?? '',
+                mood: item.mood ?? 1,
+                content: item.content ?? '',
+                star: item.star ?? 1,
+            }))
             setDiaryList(entries)
         } else {
             setDiaryList(sampleDiary)
-        }
-    }
-
-    function search() {
-        loadEntries()
-    }
-
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-        if (event.key === 'Enter') {
-            loadEntries()
-            event.preventDefault()
         }
     }
 
@@ -87,8 +71,7 @@ function DiaryList() {
         mood: -1,
         text: 'All',
         icon: <AccountBoxIcon sx={{ color: '#0099ff', fontSize: 'inherit' }} />,
-    }, ...moodList
-    ]
+    }, ...moodList]
 
     return (
         <>
@@ -99,19 +82,13 @@ function DiaryList() {
                     id="mood-select"
                     value={filterMood}
                     label="Mood"
-                    onChange={(event) => {
-                        //entry.mood = event.target.value as number
-                        setFilterMood(event.target.value as number)
-                    }}
-                    sx={{
-                        mr: 0.5,
-                        mb: 1.5
-                    }}
+                    onChange={(event) => setFilterMood(event.target.value as number)}
+                    sx={{ mr: 0.5, mb: 1.5 }}
                 >
                     {moodListExtra.map((item, index) => (
                         <MenuItem value={item.mood} key={index}>
                             <Box component='span' sx={{ fontSize: '1.6em' }}>
-                                {moodListExtra[item.mood + 1].icon}
+                                {item.icon}
                             </Box>
                             <span style={{ paddingLeft: '0.7em' }}>{item.text}</span>
                         </MenuItem>
@@ -121,87 +98,72 @@ function DiaryList() {
             <TextField
                 id="filter"
                 label="Search"
-                variant="outlined"
                 size="small"
                 value={filter}
                 onChange={event => setFilter(event.target.value)}
-                onKeyDown={handleKeyDown}
-                sx={{
-                    mt: 1.5,
-                    mb: 0.5,
-                    mx: 1
-                }}
+                sx={{ mt: 1.5, mb: 0.5, mx: 1 }}
             />
-            <Button variant="contained" onClick={() => search()} sx={{ mt: 1.7 }}>Search</Button>
+            <Button variant="contained" onClick={() => loadEntries()} sx={{ mt: 1.7 }}>Search</Button>
+            
             {diaryList.map((entry, index) => (
-                <DiaryEntry entry={entry} id={index} key={index} />
+                <DiaryEntry entry={entry} id={index} key={entry.id || index} />
             ))}
         </>
     )
 }
 
 export function DiaryEntry(prop: { entry: DiaryEntryType, id: number, show?: boolean }) {
-
-    const { entry, id, show } = prop
-
+    const { entry, show } = prop
     const navigate = useNavigate()
-
     const [expand, setExpand] = useState(show)
-
-    function handleEdit(): void {
-        navigate(`/diaryedit/${entry.id}`, {
-            state: entry
-        })
-    }
-
     const theme = useTheme()
+
+    // ✅ REQUIREMENT 5: Regex logic to transform [#,#] into Map links
+    function processContent(text: string): string {
+    const coordRegex = /\[(\-?\d+\.?\d*),\s*(\-?\d+\.?\d*)\]/g;
+
+    return text.replace(coordRegex, (match, lat, lon) => {
+        // This creates the format: /map/14.59,120.98,19
+        // This matches exactly what your Map.tsx 'split' logic expects
+        return `<a href="/map/${lat},${lon},19" 
+                   style="color: #1976d2; text-decoration: underline; font-weight: bold;">
+                   📍 [${lat}, ${lon}]
+                </a>`;
+    });
+}
 
     return (
         <Paper elevation={1} sx={{
-            display: 'flex',
-            p: 1,
-            m: 1,
+            display: 'flex', p: 1, m: 1,
             backgroundColor: blue[theme.palette.mode === 'dark' ? 800 : 100],
         }}>
-
             <Typography sx={{ fontSize: '48px' }}>
-                {moodList[entry.mood].icon}
+                {moodList[entry.mood]?.icon || "😐"}
             </Typography>
-            <Box sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                flexGrow: 1,
-                pl: 1,
-            }}>
-                <Typography sx={{ textAlign: 'left' }}>
-                    {entry.date.toUTCString()}
-                </Typography>
-                <Typography onClick={() => setExpand(!expand)} >
+            <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, pl: 1, textAlign: 'left' }}>
+                <Typography variant="caption">{entry.date.toUTCString()}</Typography>
+                <Typography onClick={() => setExpand(!expand)} sx={{ cursor: 'pointer', fontWeight: 'bold' }}>
                     {entry.title}
                 </Typography>
                 {expand && (
-                    <Typography>
-                        <div dangerouslySetInnerHTML={{ __html: processContent(entry.content) }}></div>
-                    </Typography>
+                    <Box sx={{ mt: 1 }}>
+                        {/* ✅ Renders the text with the clickable link */}
+                        <div dangerouslySetInnerHTML={{ __html: processContent(entry.content) }} />
+                    </Box>
                 )}
             </Box>
-            <Typography sx={{ fontSize: '24px', color: '#cc9d02' }}>
-                {"★".repeat(entry.star)}
-            </Typography>
-            <Tooltip title="Edit">
-                <IconButton aria-label="edit" onClick={handleEdit}>
-                    <EditIcon />
-                </IconButton>
-            </Tooltip>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography sx={{ fontSize: '20px', color: '#cc9d02', mr: 1 }}>
+                    {"★".repeat(entry.star)}
+                </Typography>
+                <Tooltip title="Edit">
+                    <IconButton onClick={() => navigate(`/diaryedit/${entry.id}`, { state: entry })}>
+                        <EditIcon />
+                    </IconButton>
+                </Tooltip>
+            </Box>
         </Paper>
     )
-
-    function processContent(text: string): string {
-        // replace [#,#] with something link to maps
-        const samRegex = /(Samson)/gi
-        text = text.replaceAll(samRegex, '<strong>$1</strong>')
-        return text
-    }
 }
 
 export default DiaryList
