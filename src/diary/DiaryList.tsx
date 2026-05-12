@@ -1,4 +1,5 @@
 import AccountBoxIcon from '@mui/icons-material/AccountBox'
+import CloseIcon from '@mui/icons-material/Close'
 import EditIcon from '@mui/icons-material/Edit'
 import FilterAltOffIcon from '@mui/icons-material/FilterAltOff'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
@@ -14,6 +15,7 @@ import {
     IconButton,
     InputLabel,
     MenuItem,
+    Modal,
     Paper,
     Rating,
     Select,
@@ -29,8 +31,6 @@ import { useTheme } from "@mui/material/styles"
 import { moodList, sampleDiary, type DiaryEntryType } from "./Diary"
 import { user } from "../userState"
 import { isSupabaseConfigured, supabase } from "../supabaseClient"
-
-const coordinateRegex = /\[(-?\d+\.?\d*),\s*(-?\d+\.?\d*)\]/g
 
 type EntryRow = {
     id?: string,
@@ -65,7 +65,7 @@ function DiaryList() {
                 entry.title.toLowerCase().includes(search) ||
                 stripHtml(entry.content).toLowerCase().includes(search)
             const matchesMood = filterMood === -1 || entry.mood === filterMood
-            const matchesStars = minimumStar === 0 || entry.star >= minimumStar
+            const matchesStars = minimumStar === 0 || entry.star === minimumStar
             return matchesSearch && matchesMood && matchesStars
         })
 
@@ -175,7 +175,7 @@ function DiaryList() {
                         >
                             <MenuItem value={0}>Any rating</MenuItem>
                             {[1, 2, 3, 4, 5].map((star) => (
-                                <MenuItem value={star} key={star}>{star}+ stars</MenuItem>
+                                <MenuItem value={star} key={star}>{star} {star === 1 ? 'star' : 'stars'}</MenuItem>
                             ))}
                         </Select>
                     </FormControl>
@@ -188,6 +188,7 @@ function DiaryList() {
                             label="Sort"
                             onChange={(event) => setSort(event.target.value)}
                         >
+                            <MenuItem value="newest">Any sort</MenuItem>
                             <MenuItem value="newest">Newest first</MenuItem>
                             <MenuItem value="oldest">Oldest first</MenuItem>
                             <MenuItem value="highest">Highest rated</MenuItem>
@@ -221,101 +222,214 @@ export function DiaryEntry(prop: { entry: DiaryEntryType, id: number, show?: boo
     const { entry, show } = prop
     const navigate = useNavigate()
     const [expand, setExpand] = useState(Boolean(show))
+    const [photoModalOpen, setPhotoModalOpen] = useState(false)
+    const [photoModalSrc, setPhotoModalSrc] = useState('')
     const theme = useTheme()
     const mood = moodList[entry.mood]
+    
     const hasLocation = /\[(-?\d+\.?\d*),\s*(-?\d+\.?\d*)\]/.test(entry.content)
     const hasAudio = /<audio[^>]*>/i.test(entry.content)
+    const locationMatch = entry.content.match(/\[(-?\d+\.?\d*),\s*(-?\d+\.?\d*)\]/)
+    const audioMatch = entry.content.match(/<audio[^>]*src=["\']([^"\']+)["\'][^>]*><\/audio>/i)
+    const photoMatches = Array.from(entry.content.matchAll(/<figure class="diary-photo">[\s\S]*?<img\s+src="([^"]+)"[^>]*>[\s\S]*?<\/figure>/gi)).map((match) => match[1])
 
-    function processContent(text: string): string {
-        return text.replace(coordinateRegex, (_match, lat, lon) => {
-            return `<a href="/map/${lat},${lon},16" style="color: #4f46e5; text-decoration: underline; font-weight: 700;">[${lat}, ${lon}]</a>`;
-        });
+    function stripMediaFromContent(text: string): string {
+        return text
+            .replace(/<audio[^>]*>.*?<\/audio>/gi, '')
+            .replace(/<figure class="diary-photo">.*?<\/figure>/gi, '')
+            .replace(/\[(-?\d+\.?\d*),\s*(-?\d+\.?\d*)\]/g, '')
+            .replace(/<p>\s*<\/p>/g, '')
+            .trim()
     }
 
+    function openPhotoModal(src: string) {
+        setPhotoModalSrc(src)
+        setPhotoModalOpen(true)
+    }
+
+    const cleanContent = stripMediaFromContent(entry.content)
+
     return (
-        <Paper
-            elevation={0}
-            sx={{
-                p: { xs: 2, md: 2.5 },
-                border: '1px solid',
-                borderColor: expand ? 'primary.light' : 'divider',
-                backgroundColor: theme.palette.mode === 'dark' ? 'background.paper' : '#ffffff',
-            }}
-        >
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'flex-start' }}>
-                <Box
-                    sx={{
-                        width: 58,
-                        height: 58,
-                        borderRadius: 2,
-                        display: 'grid',
-                        placeItems: 'center',
-                        fontSize: 32,
-                        flexShrink: 0,
-                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(129,140,248,0.18)' : 'rgba(79,70,229,0.10)',
-                    }}
-                >
-                    {mood?.icon}
-                </Box>
-                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
-                        <Box>
-                            <Typography variant="caption" color="text.secondary">
-                                {entry.date.toLocaleString()}
-                            </Typography>
-                            <Typography
-                                variant="h6"
-                                onClick={() => setExpand(!expand)}
-                                sx={{ cursor: 'pointer', lineHeight: 1.25 }}
-                            >
-                                {entry.title || 'Untitled entry'}
-                            </Typography>
+        <>
+            <Paper
+                elevation={0}
+                sx={{
+                    border: '1px solid',
+                    borderColor: expand ? 'primary.light' : 'divider',
+                    backgroundColor: theme.palette.mode === 'dark' ? 'background.paper' : '#ffffff',
+                }}
+            >
+                <Box sx={{ p: { xs: 2, md: 2.5 } }}>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'flex-start' }}>
+                        <Box
+                            sx={{
+                                width: 58,
+                                height: 58,
+                                borderRadius: 2,
+                                display: 'grid',
+                                placeItems: 'center',
+                                fontSize: 32,
+                                flexShrink: 0,
+                                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(129,140,248,0.18)' : 'rgba(79,70,229,0.10)',
+                            }}
+                        >
+                            {mood?.icon}
                         </Box>
-                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                            {mood && <Chip size="small" label={mood.text} color="primary" variant="outlined" />}
-                            {hasLocation && <Chip size="small" icon={<LocationOnIcon />} label="Map link" variant="outlined" />}
-                            {hasAudio && <Chip size="small" icon={<MicIcon />} label="Voice memo" variant="outlined" />}
-                            <Rating value={entry.star} max={5} readOnly size="small" icon={<StarIcon fontSize="inherit" />} emptyIcon={<StarIcon fontSize="inherit" />} />
-                            <Tooltip title="Edit entry">
-                                <IconButton onClick={() => navigate(`/diaryedit/${entry.id}`, { state: entry })} aria-label="edit entry">
-                                    <EditIcon />
-                                </IconButton>
-                            </Tooltip>
-                        </Stack>
+                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
+                                <Box>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {entry.date.toLocaleString()}
+                                    </Typography>
+                                    <Typography
+                                        variant="h6"
+                                        onClick={() => setExpand(!expand)}
+                                        sx={{ cursor: 'pointer', lineHeight: 1.25 }}
+                                    >
+                                        {entry.title || 'Untitled entry'}
+                                    </Typography>
+                                </Box>
+                                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                                    {mood && <Chip size="small" label={mood.text} color="primary" variant="outlined" />}
+                                    {hasLocation && <Chip size="small" icon={<LocationOnIcon />} label="Map link" variant="outlined" />}
+                                    {hasAudio && <Chip size="small" icon={<MicIcon />} label="Voice memo" variant="outlined" />}
+                                    <Rating value={entry.star} max={5} readOnly size="small" icon={<StarIcon fontSize="inherit" />} emptyIcon={<StarIcon fontSize="inherit" />} />
+                                    <Tooltip title="Edit entry">
+                                        <IconButton onClick={() => navigate(`/diaryedit/${entry.id}`, { state: entry })} aria-label="edit entry">
+                                            <EditIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Stack>
+                            </Stack>
+                        </Box>
                     </Stack>
+
                     {expand && (
                         <>
-                            <Divider sx={{ my: 1.5 }} />
-                            <Box
-                                sx={{
-                                    color: 'text.secondary',
-                                    lineHeight: 1.75,
-                                    '& p': { my: 1 },
-                                    '& .diary-photo': {
-                                        m: 0,
-                                        mt: 2,
-                                    },
-                                    '& .diary-photo img': {
-                                        width: '100%',
-                                        maxHeight: 420,
-                                        objectFit: 'cover',
-                                        borderRadius: 2,
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                    },
-                                    '& .diary-photo figcaption': {
-                                        mt: 0.75,
-                                        fontSize: '0.8rem',
-                                        color: 'text.secondary',
-                                    },
-                                }}
-                                dangerouslySetInnerHTML={{ __html: processContent(entry.content) }}
-                            />
+                            <Divider sx={{ my: 2 }} />
+                            <Stack spacing={2.5}>
+                                {cleanContent && (
+                                    <Box>
+                                        <Typography variant="body1" sx={{ lineHeight: 1.8, color: 'text.primary' }}>
+                                            {cleanContent.replace(/<[^>]*>/g, '')}
+                                        </Typography>
+                                    </Box>
+                                )}
+
+                                {hasAudio && audioMatch && (
+                                    <Box sx={{ pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+                                        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                                            Voice memo
+                                        </Typography>
+                                        <audio
+                                            controls
+                                            src={audioMatch[1]}
+                                            style={{
+                                                width: '100%',
+                                                maxWidth: 400,
+                                            }}
+                                        />
+                                    </Box>
+                                )}
+
+                                {photoMatches.length > 0 && (
+                                    <Box sx={{ pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+                                        <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600 }}>
+                                            Photos
+                                        </Typography>
+                                        <Stack spacing={2}>
+                                            {photoMatches.map((src, index) => (
+                                                <Box
+                                                    key={`${src}-${index}`}
+                                                    component="img"
+                                                    src={src}
+                                                    alt={`Diary photo ${index + 1}`}
+                                                    onClick={() => openPhotoModal(src)}
+                                                    sx={{
+                                                        width: '100%',
+                                                        maxHeight: 280,
+                                                        objectFit: 'contain',
+                                                        borderRadius: 2,
+                                                        border: '1px solid',
+                                                        borderColor: 'divider',
+                                                        cursor: 'pointer',
+                                                        transition: 'transform 0.2s, box-shadow 0.2s',
+                                                        backgroundColor: 'background.default',
+                                                        '&:hover': {
+                                                            transform: 'scale(1.02)',
+                                                            boxShadow: 2,
+                                                        }
+                                                    }}
+                                                />
+                                            ))}
+                                        </Stack>
+                                    </Box>
+                                )}
+
+                                {locationMatch && (
+                                    <Box sx={{ pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+                                        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                                            Location
+                                        </Typography>
+                                        <Button
+                                            variant="outlined"
+                                            size="small"
+                                            startIcon={<LocationOnIcon />}
+                                            onClick={() => navigate(`/map/${locationMatch[1]},${locationMatch[2]},16`)}
+                                        >
+                                            View on map: [{locationMatch[1]}, {locationMatch[2]}]
+                                        </Button>
+                                    </Box>
+                                )}
+                            </Stack>
                         </>
                     )}
                 </Box>
-            </Stack>
-        </Paper>
+            </Paper>
+
+            <Modal
+                open={photoModalOpen}
+                onClose={() => setPhotoModalOpen(false)}
+                sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}
+            >
+                <Box
+                    sx={{
+                        position: 'relative',
+                        maxWidth: '90vw',
+                        maxHeight: '90vh',
+                        backgroundColor: 'background.paper',
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                    }}
+                >
+                    <Box
+                        component="img"
+                        src={photoModalSrc}
+                        alt="Fullscreen photo"
+                        sx={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'contain',
+                        }}
+                    />
+                    <IconButton
+                        onClick={() => setPhotoModalOpen(false)}
+                        sx={{
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                            color: 'white',
+                            '&:hover': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                            }
+                        }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </Box>
+            </Modal>
+        </>
     )
 }
 

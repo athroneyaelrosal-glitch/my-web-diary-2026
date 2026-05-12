@@ -9,7 +9,7 @@ import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import CssBaseline from '@mui/material/CssBaseline';
 import Divider from '@mui/material/Divider';
-import EditCalendarIcon from '@mui/icons-material/EditCalendar';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
@@ -225,7 +225,7 @@ function App() {
       >
         <Container maxWidth="xl">
           <Toolbar disableGutters sx={{ minHeight: { xs: 64, md: 72 } }}>
-            <EditCalendarIcon sx={{ display: { xs: 'none', md: 'flex' }, fontSize: 36, mr: 1.2 }} />
+            <MenuBookIcon sx={{ display: { xs: 'none', md: 'flex' }, fontSize: 36, mr: 1.2 }} />
             <Typography
               variant="h5"
               noWrap
@@ -283,7 +283,7 @@ function App() {
                 ))}
               </Menu>
             </Box>
-            <EditCalendarIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
+            <MenuBookIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
             <Typography
               variant="h5"
               noWrap
