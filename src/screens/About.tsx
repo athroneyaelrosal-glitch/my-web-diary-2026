@@ -5,7 +5,10 @@ import GroupsIcon from "@mui/icons-material/Groups"
 import MapIcon from "@mui/icons-material/Map"
 import SearchIcon from "@mui/icons-material/Search"
 import SecurityIcon from "@mui/icons-material/Security"
-import { Box, Chip, Divider, Paper, Stack, Typography } from "@mui/material"
+import { Avatar, Box, Chip, Divider, Paper, Stack, Typography } from "@mui/material"
+import AthroneImage from "../../Athrone.jpg"
+import KevinImage from "../../Kevin.jpg"
+
 
 const featureList = [
     { icon: <SearchIcon />, title: "Advanced search", text: "Filter entries by keyword, mood, rating, and sort order." },
@@ -22,9 +25,9 @@ const rubricItems = [
 ]
 
 const teamMembers = [
-    "Athrone Rosal",
-    "Kevin Mendoza",
-    "Railey Dela Cruz",
+    { name: "Athrone Rosal", avatar: AthroneImage },
+    { name: "Kevin Mendoza", avatar: KevinImage },
+    { name: "Railey Dela Cruz", avatar: "/Railey.jpg" },
 ]
 
 function About() {
@@ -48,8 +51,15 @@ function About() {
                 </Stack>
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 1.5 }}>
                     {teamMembers.map((member) => (
-                        <Paper key={member} variant="outlined" sx={{ p: 2, backgroundColor: 'background.default' }}>
-                            <Typography fontWeight={800}>{member}</Typography>
+                        <Paper key={member.name} variant="outlined" sx={{ p: 2, backgroundColor: 'background.default' }}>
+                            <Stack alignItems="center" spacing={1}>
+                                {member.avatar ? (
+                                    <Avatar src={member.avatar} alt={member.name} sx={{ width: 68, height: 68 }} />
+                                ) : (
+                                    <Avatar sx={{ width: 68, height: 68 }}>{member.name.charAt(0)}</Avatar>
+                                )}
+                                <Typography fontWeight={800}>{member.name}</Typography>
+                            </Stack>
                         </Paper>
                     ))}
                 </Box>

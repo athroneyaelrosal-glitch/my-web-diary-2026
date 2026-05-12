@@ -239,6 +239,9 @@ export function DiaryEntry(prop: { entry: DiaryEntryType, id: number, show?: boo
             .replace(/<figure class="diary-photo">.*?<\/figure>/gi, '')
             .replace(/\[(-?\d+\.?\d*),\s*(-?\d+\.?\d*)\]/g, '')
             .replace(/<p>\s*<\/p>/g, '')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+
             .trim()
     }
 

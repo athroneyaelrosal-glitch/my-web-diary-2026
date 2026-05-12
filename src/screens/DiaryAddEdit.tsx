@@ -212,7 +212,7 @@ function DiaryAddEdit() {
         }
 
         if (photoPreview) {
-            const photoHtml = `<figure class="diary-photo"><img src="${photoPreview}" alt="Diary upload" /><figcaption>Attached photo</figcaption></figure>`
+            const photoHtml = `<figure class="diary-photo"><img src="${photoPreview}" alt="Diary upload" /></figure>`
             fragments.push(photoHtml)
         }
 
