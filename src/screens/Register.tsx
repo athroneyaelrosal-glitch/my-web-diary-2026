@@ -1,8 +1,8 @@
-import { Box, Button, TextField, Typography } from "@mui/material"
+import { Button, Paper, TextField, Typography } from "@mui/material"
 import { useNavigate } from "react-router";
 import { useState } from "react";
-import { supabase } from "../supabaseClient";
-import { user } from "../App";
+import { isSupabaseConfigured, supabase, supabaseConfigMessage } from "../supabaseClient";
+import { user } from "../userState";
 
 function Register() {
 
@@ -18,6 +18,11 @@ function Register() {
     const [otherError, setOtherError] = useState('')
 
     function save() {
+        if (!isSupabaseConfigured) {
+            setOtherError(supabaseConfigMessage)
+            return
+        }
+
         // validate
         setError(emptyEntry)
         if (entry.password !== entry.retypePassword) {
@@ -55,8 +60,9 @@ function Register() {
     }
 
     return (
-        <Box sx={{ padding: 1 }}>
-            <Typography variant="h4" component="h4" sx={{ pb: 2, pt: 1 }}>Register</Typography>
+        <Paper elevation={0} sx={{ p: { xs: 2.5, md: 3 }, border: '1px solid', borderColor: 'divider', maxWidth: 560, mx: 'auto' }}>
+            <Typography variant="h4" component="h4" sx={{ pb: 1 }}>Register</Typography>
+            <Typography color="text.secondary" sx={{ mb: 2 }}>Create an account to connect your diary to Supabase.</Typography>
             <TextField
                 fullWidth
                 id="name"
@@ -130,7 +136,7 @@ function Register() {
             <Typography color='error'>{otherError}</Typography>
             <Button variant="outlined" onClick={() => navigate('/')}>Cancel</Button>
             <Button variant="contained" onClick={() => save()} sx={{ ml: 1 }}>Register</Button>
-        </Box>
+        </Paper>
     )
 }
 
