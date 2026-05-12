@@ -1,5 +1,5 @@
 import { Button, Paper, TextField, Typography } from "@mui/material"
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { isSupabaseConfigured, supabase, supabaseConfigMessage } from "../supabaseClient";
 import { user } from "../userState";

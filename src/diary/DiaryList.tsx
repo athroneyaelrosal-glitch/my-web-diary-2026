@@ -23,7 +23,7 @@ import {
 } from "@mui/material"
 import type { PostgrestError } from "@supabase/supabase-js"
 import { useEffect, useMemo, useState } from "react"
-import { useNavigate } from "react-router"
+import { useNavigate } from "react-router-dom"
 import { useTheme } from "@mui/material/styles"
 import { moodList, sampleDiary, type DiaryEntryType } from "./Diary"
 import { user } from "../userState"
@@ -70,6 +70,7 @@ function DiaryList() {
 
         return [...filtered].sort((a, b) => {
             if (sort === 'highest') return b.star - a.star
+            if (sort === 'lowest') return a.star - b.star
             if (sort === 'oldest') return a.date.getTime() - b.date.getTime()
             return b.date.getTime() - a.date.getTime()
         })
@@ -189,6 +190,7 @@ function DiaryList() {
                             <MenuItem value="newest">Newest first</MenuItem>
                             <MenuItem value="oldest">Oldest first</MenuItem>
                             <MenuItem value="highest">Highest rated</MenuItem>
+                            <MenuItem value="lowest">Lowest rated</MenuItem>
                         </Select>
                     </FormControl>
                     <Button variant="contained" startIcon={<SearchIcon />} onClick={loadEntries}>

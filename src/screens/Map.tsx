@@ -3,7 +3,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import { useEffect } from "react";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
-import { useParams } from "react-router";
+import { useParams } from "react-router-dom";
 import 'leaflet/dist/leaflet.css';
 
 function Recenter({ lat, lng, zoom }: { lat: number, lng: number, zoom: number }) {

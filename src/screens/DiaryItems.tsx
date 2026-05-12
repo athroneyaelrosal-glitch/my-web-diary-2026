@@ -2,7 +2,7 @@ import Fab from "@mui/material/Fab"
 import AddIcon from '@mui/icons-material/Add';
 
 import DiaryList from "../diary/DiaryList"
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 
 function DiaryItems() {
 

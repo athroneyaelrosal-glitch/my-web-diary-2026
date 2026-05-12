@@ -15,8 +15,8 @@ import {
 } from "@mui/material"
 import { Editor } from "@tinymce/tinymce-react";
 import { format } from "date-fns/format";
-import { useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { moodList, type DiaryEntryType } from "../diary/Diary";
 import { user } from "../userState";
 import { isSupabaseConfigured, supabase, supabaseConfigMessage } from "../supabaseClient";
@@ -31,14 +31,130 @@ function createEmptyEntry(): DiaryEntryType {
     }
 }
 
+function extractLocationFromContent(content: string) {
+    const match = content.match(/\[(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)(?:,\s*(\d+))?\]/)
+    return match ? `${match[1]}, ${match[2]}` : ''
+}
+
+function replaceLocationInContent(content: string, location: string) {
+    const normalized = location.trim()
+    const locationMarkup = normalized ? `<p>[${normalized}]</p>` : ''
+    const existing = content.replace(/\s*$/, '')
+    if (/\[(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)(?:,\s*(\d+))?\]/.test(existing)) {
+        if (normalized) {
+            return existing.replace(/\[(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)(?:,\s*(\d+))?\]/, `[${normalized}]`)
+        }
+        return existing.replace(/\s*\[(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)(?:,\s*(\d+))?\]\s*/, '')
+    }
+    return normalized ? `${existing}${existing ? '' : ''}${locationMarkup}` : existing
+}
+
+function extractAudioFromContent(content: string) {
+    const match = content.match(/<audio[^>]*src=["']([^"']+)["'][^>]*><\/audio>/i)
+    return match ? match[1] : ''
+}
+
+function removeAudioFromContent(content: string) {
+    return content.replace(/<audio[\s\S]*?<\/audio>/i, '')
+}
+
 function DiaryAddEdit() {
     const { id } = useParams();
     const navigate = useNavigate()
     const location = useLocation()
     const initialEntry = id === undefined ? createEmptyEntry() : (location.state as DiaryEntryType | null) ?? createEmptyEntry()
     const [entry, setEntry] = useState(initialEntry)
+    const [locationInput, setLocationInput] = useState(() => extractLocationFromContent(initialEntry.content))
     const [photoPreview, setPhotoPreview] = useState('')
     const [photoError, setPhotoError] = useState('')
+    const [isRecording, setIsRecording] = useState(false)
+    const [audioPlaybackUrl, setAudioPlaybackUrl] = useState(() => extractAudioFromContent(initialEntry.content))
+    const [audioDataUrl, setAudioDataUrl] = useState(() => extractAudioFromContent(initialEntry.content))
+    const [recordingError, setRecordingError] = useState('')
+    const recorderRef = useRef<MediaRecorder | null>(null)
+    const audioChunksRef = useRef<Blob[]>([])
+
+    useEffect(() => {
+        return () => {
+            if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+                recorderRef.current.stop()
+            }
+            if (audioPlaybackUrl && audioPlaybackUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(audioPlaybackUrl)
+            }
+        }
+    }, [audioPlaybackUrl])
+
+    async function startVoiceRecording() {
+        setRecordingError('')
+
+        if (!navigator.mediaDevices?.getUserMedia) {
+            setRecordingError('Audio recording is not supported in this browser.')
+            return
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            const mediaRecorder = new MediaRecorder(stream)
+            audioChunksRef.current = []
+
+            mediaRecorder.ondataavailable = (event: BlobEvent) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data)
+                }
+            }
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+                const newPlaybackUrl = URL.createObjectURL(blob)
+                if (audioPlaybackUrl && audioPlaybackUrl.startsWith('blob:')) {
+                    URL.revokeObjectURL(audioPlaybackUrl)
+                }
+                setAudioPlaybackUrl(newPlaybackUrl)
+
+                const reader = new FileReader()
+                reader.onloadend = () => {
+                    if (typeof reader.result === 'string') {
+                        setAudioDataUrl(reader.result)
+                    }
+                }
+                reader.readAsDataURL(blob)
+                stream.getTracks().forEach(track => track.stop())
+            }
+
+            recorderRef.current = mediaRecorder
+            mediaRecorder.start()
+            setIsRecording(true)
+        } catch (error) {
+            setRecordingError(error instanceof Error ? error.message : 'Unable to access the microphone.')
+        }
+    }
+
+    function stopVoiceRecording() {
+        const recorder = recorderRef.current
+        if (!recorder) {
+            return
+        }
+
+        recorder.stop()
+        recorderRef.current = null
+        setIsRecording(false)
+    }
+
+    function clearVoiceRecording() {
+        if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+            recorderRef.current.stop()
+            recorderRef.current = null
+        }
+
+        if (audioPlaybackUrl && audioPlaybackUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(audioPlaybackUrl)
+        }
+        setAudioPlaybackUrl('')
+        setAudioDataUrl('')
+        setRecordingError('')
+        setIsRecording(false)
+    }
 
     function resizeImage(file: File): Promise<string> {
         return new Promise((resolve, reject) => {
@@ -86,12 +202,21 @@ function DiaryAddEdit() {
     }
 
     function getContentForSave() {
-        if (!photoPreview) {
-            return entry.content
+        const contentWithLocation = replaceLocationInContent(entry.content, locationInput)
+        const contentWithoutAudio = removeAudioFromContent(contentWithLocation)
+
+        const fragments = [contentWithoutAudio]
+
+        if (audioDataUrl) {
+            fragments.push(`<audio controls src="${audioDataUrl}"></audio>`)
         }
 
-        const photoHtml = `<figure class="diary-photo"><img src="${photoPreview}" alt="Diary upload" /><figcaption>Attached photo</figcaption></figure>`
-        return `${entry.content || ''}${photoHtml}`
+        if (photoPreview) {
+            const photoHtml = `<figure class="diary-photo"><img src="${photoPreview}" alt="Diary upload" /><figcaption>Attached photo</figcaption></figure>`
+            fragments.push(photoHtml)
+        }
+
+        return fragments.filter(Boolean).join('')
     }
 
     async function save() {
@@ -129,6 +254,31 @@ function DiaryAddEdit() {
         } catch (error) {
             console.log(error)
         }
+    }
+
+    async function deleteEntry() {
+        if (!entry.id) {
+            navigate('/diarylist')
+            return
+        }
+
+        if (!window.confirm('Delete this diary entry? This cannot be undone.')) {
+            return
+        }
+
+        if (!isSupabaseConfigured || !user.session) {
+            navigate('/diarylist')
+            return
+        }
+
+        try {
+            const result = await supabase.from('entries').delete().eq('id', entry.id)
+            console.log(result)
+        } catch (error) {
+            console.log(error)
+        }
+
+        navigate('/diarylist')
     }
 
     return (
@@ -204,6 +354,55 @@ function DiaryAddEdit() {
                     onChange={event => setEntry({ ...entry, title: event.target.value })}
                 />
 
+                <TextField
+                    fullWidth
+                    id="location"
+                    label="Location"
+                    placeholder="14.6111512, 120.9749947"
+                    variant="outlined"
+                    value={locationInput}
+                    onChange={(event) => setLocationInput(event.target.value)}
+                    helperText="Optional coordinates. Saved into diary content for link generation."
+                />
+
+                <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>Voice memo</Typography>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems="center">
+                        <Button
+                            variant="outlined"
+                            color={isRecording ? 'error' : 'primary'}
+                            onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
+                        >
+                            {isRecording ? 'Stop recording' : 'Record voice'}
+                        </Button>
+                        {audioPlaybackUrl && (
+                            <Button variant="outlined" onClick={() => { const audio = document.getElementById('diary-audio-player') as HTMLAudioElement | null; audio?.play() }}>
+                                Play recording
+                            </Button>
+                        )}
+                        {audioPlaybackUrl && (
+                            <Button variant="text" onClick={clearVoiceRecording}>
+                                Clear
+                            </Button>
+                        )}
+                    </Stack>
+                    {recordingError && (
+                        <Alert severity="error" sx={{ mt: 1.5 }}>
+                            {recordingError}
+                        </Alert>
+                    )}
+                    {audioPlaybackUrl && (
+                        <Box sx={{ mt: 2 }}>
+                            <audio id="diary-audio-player" controls src={audioPlaybackUrl} style={{ width: '100%' }} />
+                        </Box>
+                    )}
+                    {isRecording && (
+                        <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+                            Recording… speak into your microphone.
+                        </Typography>
+                    )}
+                </Box>
+
                 <Box>
                     <Button component="label" variant="outlined" startIcon={<AddPhotoAlternateIcon />}>
                         Upload picture preview
@@ -259,11 +458,16 @@ function DiaryAddEdit() {
                         }}
                     />
                     <Typography variant="caption" color="text.secondary">
-                        Tip: type coordinates like [14.6111512, 120.9749947] to create a clickable map link in the diary list.
+                        Tip: use the Location field to save coordinates. The diary list will turn them into clickable map links.
                     </Typography>
                 </Box>
 
                 <Stack direction="row" spacing={1.5} justifyContent="flex-end">
+                    {entry.id !== undefined && (
+                        <Button color="error" variant="outlined" onClick={deleteEntry}>
+                            Delete
+                        </Button>
+                    )}
                     <Button variant="outlined" onClick={() => navigate('/diarylist')}>Cancel</Button>
                     <Button variant="contained" startIcon={<SaveIcon />} onClick={save}>Save</Button>
                 </Stack>

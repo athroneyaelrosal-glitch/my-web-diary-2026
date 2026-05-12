@@ -1,6 +1,7 @@
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import CloudDoneIcon from "@mui/icons-material/CloudDone"
 import DesignServicesIcon from "@mui/icons-material/DesignServices"
+import GroupsIcon from "@mui/icons-material/Groups"
 import MapIcon from "@mui/icons-material/Map"
 import SearchIcon from "@mui/icons-material/Search"
 import SecurityIcon from "@mui/icons-material/Security"
@@ -20,6 +21,12 @@ const rubricItems = [
     "Git-friendly environment setup with local secrets kept out of commits",
 ]
 
+const teamMembers = [
+    "Athrone Rosal",
+    "Kevin Mendoza",
+    "Railey Dela Cruz",
+]
+
 function About() {
     return (
         <Stack spacing={3}>
@@ -32,6 +39,20 @@ function About() {
                     The project focuses on clean design, useful interactions, readable content, and
                     complete user workflows.
                 </Typography>
+            </Paper>
+
+            <Paper elevation={0} sx={{ p: { xs: 2.5, md: 3 }, border: '1px solid', borderColor: 'divider' }}>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
+                    <GroupsIcon color="primary" />
+                    <Typography variant="h5">Project Members</Typography>
+                </Stack>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 1.5 }}>
+                    {teamMembers.map((member) => (
+                        <Paper key={member} variant="outlined" sx={{ p: 2, backgroundColor: 'background.default' }}>
+                            <Typography fontWeight={800}>{member}</Typography>
+                        </Paper>
+                    ))}
+                </Box>
             </Paper>
 
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 2 }}>

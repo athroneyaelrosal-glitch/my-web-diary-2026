@@ -38,7 +38,7 @@ import DiaryItems from './screens/DiaryItems';
 import Login from './screens/Login';
 import Register from './screens/Register';
 import Map from './screens/Map';
-import { Route, Routes, useNavigate } from 'react-router';
+import { Link, Route, Routes, useNavigate } from 'react-router-dom';
 
 type PageRoute = {
   page: string,
@@ -120,12 +120,6 @@ function App() {
   };
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
-  };
-
-  const handleNavMenu = (page: string) => {
-    //alert(page)
-    navigate(page)
-    setAnchorElNav(null);
   };
 
   const handleCloseNavMenu = () => {
@@ -233,8 +227,8 @@ function App() {
             <Typography
               variant="h5"
               noWrap
-              component="a"
-              href="/"
+              component={Link}
+              to="/"
               sx={{
                 mr: 3,
                 display: { xs: 'none', md: 'flex' },
@@ -276,7 +270,12 @@ function App() {
                 sx={{ display: { xs: 'block', md: 'none' } }}
               >
                 {pages.map((page) => (
-                  <MenuItem key={page.page} onClick={() => handleNavMenu(page.route)}>
+                  <MenuItem
+                    key={page.page}
+                    component={Link}
+                    to={page.route}
+                    onClick={handleCloseNavMenu}
+                  >
                     <Typography sx={{ textAlign: 'center' }}>{page.page}</Typography>
                   </MenuItem>
                 ))}
@@ -286,8 +285,8 @@ function App() {
             <Typography
               variant="h5"
               noWrap
-              component="a"
-              href="/"
+              component={Link}
+              to="/"
               sx={{
                 mr: 2,
                 display: { xs: 'flex', md: 'none' },
@@ -305,7 +304,8 @@ function App() {
               {pages.map((page) => (
                 <Button
                   key={page.page}
-                  onClick={() => handleNavMenu(page.route)}
+                  component={Link}
+                  to={page.route}
                   sx={{
                     my: 2,
                     mx: 0.25,
