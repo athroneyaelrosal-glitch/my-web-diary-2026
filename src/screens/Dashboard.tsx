@@ -15,7 +15,7 @@ import { isSupabaseConfigured, supabase } from "../supabaseClient"
 function Dashboard() {
     const navigate = useNavigate()
     const [count, setCount] = useState(sampleDiary.length)
-    const [entry, setEntry] = useState<DiaryEntryType | null>(sampleDiary[0])
+    const [entries, setEntries] = useState<DiaryEntryType[]>(sampleDiary.slice(0, 3))
 
     useEffect(() => {
         if (!isSupabaseConfigured || !user.email) {
@@ -24,34 +24,33 @@ function Dashboard() {
 
         supabase.from('entries').select('*', { count: 'exact' })
             .order('created_at', { ascending: false })
-            .limit(1)
+            .limit(3)
             .then(({ data, error, count }) => {
                 if (!error) {
                     setCount(count ?? 0)
-                    if ((count ?? 0) > 0 && data?.[0]) {
-                        const item = data[0]
-                        setEntry({
+                    if (data && data.length > 0) {
+                        setEntries(data.map((item) => ({
                             id: item.id,
                             date: item.created_at ? new Date(item.created_at) : new Date(),
                             title: item.title ?? '',
                             mood: item.mood ?? 1,
                             content: item.content ?? '',
                             star: item.star ?? 1,
-                        })
+                        })))
                     }
                 }
             })
     }, [user.email])
 
     const moodDist = useMemo(() => {
-        const source = user.email ? [entry].filter(Boolean) as DiaryEntryType[] : sampleDiary
+        const source = user.email ? entries : sampleDiary
         return moodList
             .map((mood) => ({
                 name: mood.text,
                 value: source.filter((item) => item.mood === mood.mood).length,
             }))
             .filter((item) => item.value > 0)
-    }, [entry])
+    }, [entries])
 
     const COLORS = ['#4f46e5', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#ec4899'];
 
@@ -134,7 +133,11 @@ function Dashboard() {
                         </Box>
                     </Stack>
                     <Divider sx={{ mb: 2 }} />
-                    {entry && <DiaryEntry entry={entry} id={0} show={true} />}
+                    {entries.map((item, index) => (
+                        <Box key={item.id || `${item.title}-${index}`} sx={{ mb: index < entries.length - 1 ? 2 : 0 }}>
+                            <DiaryEntry entry={item} id={index} show={true} />
+                        </Box>
+                    ))}
                 </Paper>
 
                 <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, border: '1px solid', borderColor: 'divider', minHeight: 360 }}>

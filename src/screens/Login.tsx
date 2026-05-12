@@ -1,4 +1,4 @@
-import { Button, Paper, TextField, Typography } from "@mui/material"
+import { Alert, Box, Button, Paper, Stack, TextField, Typography } from "@mui/material"
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { isSupabaseConfigured, supabase, supabaseConfigMessage } from "../supabaseClient";
@@ -14,6 +14,38 @@ function Login() {
     const [entry, setEntry] = useState(emptyEntry)
     const [error, setError] = useState(emptyEntry)
     const [otherError, setOtherError] = useState('')
+    const [resetMessage, setResetMessage] = useState('')
+    const [resetLoading, setResetLoading] = useState(false)
+
+    async function forgotPassword() {
+        setOtherError('')
+        setResetMessage('')
+
+        if (!isSupabaseConfigured) {
+            setOtherError(supabaseConfigMessage)
+            return
+        }
+
+        const email = entry.email.trim()
+        if (!email) {
+            setOtherError('Please enter your email address to reset your password.')
+            return
+        }
+
+        setResetLoading(true)
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email)
+            if (error) {
+                setOtherError(error.message)
+            } else {
+                setResetMessage('Password reset email sent. Check your inbox.')
+            }
+        } catch (error) {
+            setOtherError(error instanceof Error ? error.message : 'Unable to send password reset email.')
+        } finally {
+            setResetLoading(false)
+        }
+    }
 
     function login() {
         if (!isSupabaseConfigured) {
@@ -98,9 +130,22 @@ function Login() {
                     mb: 1.5
                 }}
             />
+            {resetMessage && (
+                <Alert severity="success" sx={{ mb: 1 }}>
+                    {resetMessage}
+                </Alert>
+            )}
             <Typography color='error'>{otherError}</Typography>
-            <Button variant="outlined" onClick={() => navigate('/')}>Cancel</Button>
-            <Button variant="contained" onClick={() => login()} sx={{ ml: 1 }}>Login</Button>
+            <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1 }}>
+                <Button disabled={resetLoading} variant="text" onClick={forgotPassword}>
+                    Forgot password?
+                </Button>
+                <Box sx={{ flexGrow: 1 }} />
+                <Button variant="outlined" onClick={() => navigate('/')}>Cancel</Button>
+                <Button variant="contained" onClick={() => login()} sx={{ ml: 1 }}>
+                    Login
+                </Button>
+            </Stack>
         </Paper>
     )
 }

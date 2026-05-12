@@ -13,10 +13,10 @@ import RamenDiningIcon from '@mui/icons-material/RamenDining';
 import SelfImprovementIcon from '@mui/icons-material/SelfImprovement';
 import SentimentDissatisfiedIcon from '@mui/icons-material/SentimentDissatisfied';
 import SentimentSatisfiedAltIcon from '@mui/icons-material/SentimentSatisfiedAlt';
-import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 import SentimentVerySatisfiedIcon from '@mui/icons-material/SentimentVerySatisfied';
 import SpaIcon from '@mui/icons-material/Spa';
 import WbTwilightIcon from '@mui/icons-material/WbTwilight';
+import HotelIcon from '@mui/icons-material/Hotel';
 import type { ReactNode } from 'react';
 
 export type MoodType = {
@@ -58,11 +58,11 @@ export const moodList: MoodType[] = [
     }, {
         mood: 5,
         text: 'Furious',
-        icon: <SentimentVeryDissatisfiedIcon sx={{ color: '#ee00ee', fontSize: 'inherit' }} />,
+        icon: <BoltIcon sx={{ color: '#ee00ee', fontSize: 'inherit' }} />,
     }, {
         mood: 6,
         text: 'Sleepy',
-        icon: <SentimentVeryDissatisfiedIcon sx={{ color: '#0468bf', fontSize: 'inherit' }} />,
+        icon: <HotelIcon sx={{ color: '#0468bf', fontSize: 'inherit' }} />,
     }, {
         mood: 7,
         text: 'Sad',

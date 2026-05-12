@@ -37,6 +37,7 @@ import DiaryAddEdit from './screens/DiaryAddEdit';
 import DiaryItems from './screens/DiaryItems';
 import Login from './screens/Login';
 import Register from './screens/Register';
+import Profile from './screens/Profile';
 import Map from './screens/Map';
 import { Link, Route, Routes, useNavigate } from 'react-router-dom';
 
@@ -57,7 +58,7 @@ const settings: PageRoute[] = [
   { page: 'Login', route: '/login' },
 ]
 const settingsUser: PageRoute[] = [
-  { page: 'Change password', route: '/password' },
+  { page: 'Edit profile', route: '/profile' },
   { page: 'Logout', route: '/logout' },
 ]
 
@@ -108,6 +109,7 @@ function App() {
     ? [customColors.website, customColors.websiteMiddle, customColors.websiteEnd]
     : [customColors.website]
   const navTextColor = getReadableTextColorForColors(navColors)
+  const currentUserAvatar = (user.session?.user.user_metadata as any)?.avatar_url as string | undefined
   const navBackground = customColors.blendWebsite
     ? `linear-gradient(135deg, ${customColors.website} 0%, ${customColors.websiteMiddle} 55%, ${customColors.websiteEnd} 140%)`
     : customColors.website
@@ -324,7 +326,7 @@ function App() {
             <Box sx={{ flexGrow: 0 }}>
               <Tooltip title="Open settings">
                 <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                  <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
+                  <Avatar alt={user.email ?? 'User'} src={currentUserAvatar ?? '/static/images/avatar/2.jpg'} />
                 </IconButton>
               </Tooltip>
               <Menu
@@ -469,6 +471,8 @@ function App() {
           <Route path='about' element={<About />} />
           <Route path='diarylist' element={<DiaryItems />} />
           <Route path='diaryedit/:id?' element={<DiaryAddEdit />} />
+          <Route path='profile' element={<Profile />} />
+          <Route path='password' element={<Profile />} />
           <Route path='register' element={<Register />} />
           <Route path='map/:loc?' element={<Map />} />
           <Route path='login' element={<Login />} />

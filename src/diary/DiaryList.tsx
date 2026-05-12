@@ -2,6 +2,7 @@ import AccountBoxIcon from '@mui/icons-material/AccountBox'
 import EditIcon from '@mui/icons-material/Edit'
 import FilterAltOffIcon from '@mui/icons-material/FilterAltOff'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
+import MicIcon from '@mui/icons-material/Mic'
 import SearchIcon from '@mui/icons-material/Search'
 import StarIcon from '@mui/icons-material/Star'
 import {
@@ -223,6 +224,7 @@ export function DiaryEntry(prop: { entry: DiaryEntryType, id: number, show?: boo
     const theme = useTheme()
     const mood = moodList[entry.mood]
     const hasLocation = /\[(-?\d+\.?\d*),\s*(-?\d+\.?\d*)\]/.test(entry.content)
+    const hasAudio = /<audio[^>]*>/i.test(entry.content)
 
     function processContent(text: string): string {
         return text.replace(coordinateRegex, (_match, lat, lon) => {
@@ -272,6 +274,7 @@ export function DiaryEntry(prop: { entry: DiaryEntryType, id: number, show?: boo
                         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                             {mood && <Chip size="small" label={mood.text} color="primary" variant="outlined" />}
                             {hasLocation && <Chip size="small" icon={<LocationOnIcon />} label="Map link" variant="outlined" />}
+                            {hasAudio && <Chip size="small" icon={<MicIcon />} label="Voice memo" variant="outlined" />}
                             <Rating value={entry.star} max={5} readOnly size="small" icon={<StarIcon fontSize="inherit" />} emptyIcon={<StarIcon fontSize="inherit" />} />
                             <Tooltip title="Edit entry">
                                 <IconButton onClick={() => navigate(`/diaryedit/${entry.id}`, { state: entry })} aria-label="edit entry">
