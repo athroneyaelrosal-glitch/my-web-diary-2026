@@ -28,7 +28,7 @@ import About from './screens/About';
 import {
   createDiaryTheme,
   darkThemeColors,
-  getReadableTextColor,
+  getReadableTextColorForColors,
   lightThemeColors,
   type CustomThemeColors,
 } from './Theme';
@@ -62,26 +62,32 @@ const settingsUser: PageRoute[] = [
 ]
 
 const colorLabels: { key: keyof CustomThemeColors, label: string }[] = [
-  { key: 'website', label: 'Website color' },
   { key: 'background', label: 'Background' },
   { key: 'card', label: 'Cards' },
   { key: 'accent', label: 'Accent' },
+]
+
+const websiteColorLabels: { key: keyof CustomThemeColors, label: string }[] = [
+  { key: 'website', label: 'Start color' },
+  { key: 'websiteMiddle', label: 'Middle color' },
+  { key: 'websiteEnd', label: 'End color' },
 ]
 
 function loadStoredDarkMode() {
   return localStorage.getItem('myDiaryDarkMode') === 'true'
 }
 
-function loadStoredThemeColors() {
+function loadStoredThemeColors(darkMode: boolean) {
   const stored = localStorage.getItem('myDiaryThemeColors')
+  const defaults = darkMode ? darkThemeColors : lightThemeColors
   if (!stored) {
-    return lightThemeColors
+    return defaults
   }
 
   try {
-    return { ...lightThemeColors, ...JSON.parse(stored) } as CustomThemeColors
+    return { ...defaults, ...JSON.parse(stored) } as CustomThemeColors
   } catch {
-    return lightThemeColors
+    return defaults
   }
 }
 
@@ -90,7 +96,7 @@ function App() {
   const navigate = useNavigate()
 
   const [dark, setDark] = React.useState(loadStoredDarkMode)
-  const [customColors, setCustomColors] = React.useState<CustomThemeColors>(loadStoredThemeColors)
+  const [customColors, setCustomColors] = React.useState<CustomThemeColors>(() => loadStoredThemeColors(loadStoredDarkMode()))
 
   const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
@@ -98,7 +104,16 @@ function App() {
     () => createDiaryTheme(dark ? 'dark' : 'light', customColors),
     [customColors, dark]
   )
-  const navTextColor = getReadableTextColor(customColors.website)
+  const navColors = customColors.blendWebsite
+    ? [customColors.website, customColors.websiteMiddle, customColors.websiteEnd]
+    : [customColors.website]
+  const navTextColor = getReadableTextColorForColors(navColors)
+  const navBackground = customColors.blendWebsite
+    ? `linear-gradient(135deg, ${customColors.website} 0%, ${customColors.websiteMiddle} 55%, ${customColors.websiteEnd} 140%)`
+    : customColors.website
+  const navTextShadow = navTextColor === '#ffffff'
+    ? '0 1px 2px rgba(0,0,0,0.45)'
+    : '0 1px 2px rgba(255,255,255,0.42)'
 
   const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
@@ -130,6 +145,18 @@ function App() {
     setCustomColors((current) => ({
       ...current,
       [key]: value,
+    }))
+  }
+
+  const handleDarkMode = (checked: boolean) => {
+    setDark(checked)
+    setCustomColors(checked ? darkThemeColors : lightThemeColors)
+  }
+
+  const handleBlendWebsite = (checked: boolean) => {
+    setCustomColors((current) => ({
+      ...current,
+      blendWebsite: checked,
     }))
   }
 
@@ -194,8 +221,9 @@ function App() {
         position="sticky"
         elevation={0}
         sx={{
-          backgroundColor: customColors.website,
+          background: navBackground,
           color: navTextColor,
+          textShadow: navTextShadow,
           borderBottom: `1px solid ${navTextColor === '#ffffff' ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.16)'}`,
         }}
       >
@@ -326,7 +354,7 @@ function App() {
                 <FormControlLabel
                   control={
                     <Switch checked={dark} onChange={() => {
-                      setDark(!dark)
+                      handleDarkMode(!dark)
                     }} />
                   }
                   sx={{ ml: 1 }}
@@ -338,6 +366,49 @@ function App() {
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>
                     Custom theme
                   </Typography>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        size="small"
+                        checked={customColors.blendWebsite}
+                        onChange={(event) => handleBlendWebsite(event.target.checked)}
+                      />
+                    }
+                    sx={{ ml: 0, mb: 0.5 }}
+                    label="Blended website color"
+                  />
+                  {(customColors.blendWebsite ? websiteColorLabels : websiteColorLabels.slice(0, 1)).map((item) => (
+                    <Box
+                      key={item.key}
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 44px',
+                        alignItems: 'center',
+                        gap: 1,
+                        mb: 1,
+                      }}
+                    >
+                      <Typography variant="body2">{item.label}</Typography>
+                      <Box
+                        component="input"
+                        type="color"
+                        value={String(customColors[item.key])}
+                        aria-label={item.label}
+                        onChange={(event) => handleThemeColor(item.key, event.target.value)}
+                        sx={{
+                          width: 44,
+                          height: 32,
+                          p: 0,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          borderRadius: 1,
+                          backgroundColor: 'transparent',
+                          cursor: 'pointer',
+                        }}
+                      />
+                    </Box>
+                  ))}
+                  <Divider sx={{ my: 1 }} />
                   {colorLabels.map((item) => (
                     <Box
                       key={item.key}
@@ -353,7 +424,7 @@ function App() {
                       <Box
                         component="input"
                         type="color"
-                        value={customColors[item.key]}
+                        value={String(customColors[item.key])}
                         aria-label={item.label}
                         onChange={(event) => handleThemeColor(item.key, event.target.value)}
                         sx={{

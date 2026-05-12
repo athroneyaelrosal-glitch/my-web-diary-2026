@@ -49,13 +49,19 @@ const sharedTheme = {
 
 export type CustomThemeColors = {
   website: string,
+  websiteMiddle: string,
+  websiteEnd: string,
+  blendWebsite: boolean,
   background: string,
   card: string,
   accent: string,
 }
 
 export const lightThemeColors: CustomThemeColors = {
-  website: "#4f46e5",
+  website: "#4338ca",
+  websiteMiddle: "#5b21b6",
+  websiteEnd: "#7c2d12",
+  blendWebsite: true,
   background: "#f6f7fb",
   card: "#ffffff",
   accent: "#f59e0b",
@@ -63,6 +69,9 @@ export const lightThemeColors: CustomThemeColors = {
 
 export const darkThemeColors: CustomThemeColors = {
   website: "#312e81",
+  websiteMiddle: "#1e1b4b",
+  websiteEnd: "#0f766e",
+  blendWebsite: true,
   background: "#0f172a",
   card: "#111827",
   accent: "#fbbf24",
@@ -92,6 +101,22 @@ function getLuminance(color: string) {
 
 export function getReadableTextColor(color: string) {
   return getLuminance(color) > 0.48 ? "#111827" : "#ffffff"
+}
+
+function getContrastRatio(first: string, second: string) {
+  const firstLuminance = getLuminance(first)
+  const secondLuminance = getLuminance(second)
+  const light = Math.max(firstLuminance, secondLuminance)
+  const dark = Math.min(firstLuminance, secondLuminance)
+
+  return (light + 0.05) / (dark + 0.05)
+}
+
+export function getReadableTextColorForColors(colors: string[]) {
+  const blackMinimumContrast = Math.min(...colors.map((color) => getContrastRatio("#111827", color)))
+  const whiteMinimumContrast = Math.min(...colors.map((color) => getContrastRatio("#ffffff", color)))
+
+  return whiteMinimumContrast >= blackMinimumContrast ? "#ffffff" : "#111827"
 }
 
 function getSecondaryTextColor(color: string) {
