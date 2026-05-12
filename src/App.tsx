@@ -171,10 +171,14 @@ function App() {
       if (error) {
         console.log(error)
       }
-      // Handle post-logout logic here, e.g., redirecting the user
+
+      user.session = null
+      user.email = null
+      navigate('/login')
       console.log('User signed out successfully');
     } catch (error: unknown) {
       console.error('Logout error:', error instanceof Error ? error.message : error);
+      navigate('/login')
     }
   }
 
