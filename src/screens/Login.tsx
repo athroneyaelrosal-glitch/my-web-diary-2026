@@ -91,6 +91,9 @@ function Login() {
 
     return (
         <Paper elevation={0} sx={{ p: { xs: 2.5, md: 3 }, border: '1px solid', borderColor: 'divider', maxWidth: 520, mx: 'auto' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                <Box component="img" src="/logo.svg" alt="My Diary logo" sx={{ width: 72, height: 72 }} />
+            </Box>
             <Typography variant="h4" component="h4" sx={{ pb: 1 }}>Login</Typography>
             <Typography color="text.secondary" sx={{ mb: 2 }}>Sign in to save and sync your diary entries.</Typography>
             <TextField
